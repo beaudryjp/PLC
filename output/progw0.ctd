@@ -1,0 +1,10 @@
+	equis = 64;
+L0:
+	if (1 < equis) goto L1;
+	goto L2;
+L1:
+	t0 = equis / 2;
+	equis = t0;
+	print equis;
+	goto L0;
+L2:

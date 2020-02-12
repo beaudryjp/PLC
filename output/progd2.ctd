@@ -1,0 +1,27 @@
+	a = 3;
+	b = 12;
+	if (a < 1) goto L2;
+	goto L1;
+L1:
+	if (5 < a) goto L4;
+	goto L3;
+L2:
+	goto L3;
+L4:
+	b = a;
+	if (10 < b) goto L5;
+	goto L6;
+L3:
+	goto L6;
+L6:
+	if (b == a) goto L7;
+	goto L8;
+L5:
+	goto L7;
+L8:
+	a = b;
+	goto L0;
+L7:
+L0:
+	t0 = a * b;
+	print t0;

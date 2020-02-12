@@ -1,0 +1,29 @@
+	if (a == 0) goto L1;
+	goto L2;
+L1:
+	if (a < b) goto L5;
+	goto L4;
+L4:
+	t0 = a * b;
+	if (c < t0) goto L8;
+	goto L7;
+L7:
+	print c;
+	goto L6;
+L8:
+L6:
+	goto L3;
+L5:
+L3:
+	t1 = -1;
+	a = t1;
+	t2 = -1;
+	b = t2;
+	t3 = -1;
+	c = t3;
+	goto L0;
+L2:
+L0:
+	t4 = a * b;
+	t5 = t4 * c;
+	print t5;

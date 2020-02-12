@@ -1,0 +1,87 @@
+import java_cup.runtime.*;
+
+/* Terminals */
+terminal OP, CP, OB, CB, SC, PLUS, MINUS, MUL, DIV, UMINUS, ASIG, AND, OR, NOT;
+terminal LT, GT, LTOREQ, GTOREQ, EQ, NOTEQ, IF, ELSE, WHILE, DO, PRINT;
+terminal String VAR, NUMBER, FOR;
+
+/* Non terminals */
+non terminal listSentence, sentence, elseCond;
+non terminal String expression, ifPART, whilePART, doPART, forPART;
+non terminal Tag condition;
+
+/* Precedences */
+/* https://ee.hawaii.edu/~tep/EE160/Book/chap5/_28291_table577.gif */
+precedence right ASIG;
+precedence left OR;
+precedence left AND;
+precedence left EQ, NOTEQ, LT, LTOREQ, GT, GTOREQ;
+precedence left PLUS, MINUS;
+precedence left MUL, DIV;
+precedence left UMINUS;
+precedence right NOT;
+precedence nonassoc IF;
+precedence nonassoc ELSE;
+
+/* Grammar */
+listSentence ::= sentence
+    | listSentence sentence
+;
+
+sentence ::= expression SC
+    | ifPART:tag OP condition:c {: Generator.label(c.getV()); :}  
+        CP sentence {: Generator.gotoLabel(tag);  Generator.label(c.getF()); :}  
+        elseCond  {: Generator.label(tag); :}
+    | whilePART:tag  {: Generator.label(tag); :}   
+        OP condition:c  {: Generator.label(c.getV()); :}            
+        CP sentence  {: Generator.gotoLabel(tag);  Generator.label(c.getF()); :}
+    | doPART:tag  {: Generator.label(tag); :}                 
+        sentence WHILE OP condition:c  {: Generator.label(c.getV());  Generator.gotoLabel(tag);  Generator.label(c.getF()); :}  
+        CP SC
+    | forPART:tag OP expression:e1 SC  {: Generator.label(tag); :}                 
+        condition:c SC  {: RESULT = Generator.newLabel();  Generator.label(RESULT.toString()); :}  
+        expression:e2 CP   {: Generator.gotoLabel(tag);  Generator.label(c.getV()); :}           
+        sentence  {: Generator.gotoLabel(RESULT.toString());  Generator.label(c.getF()); :}
+    | PRINT OP expression:e CP SC {: RESULT = Generator.print(e); :}
+    | OB listSentence CB
+;
+
+ifPART ::= IF {: RESULT = Generator.newLabel(); :}
+;
+
+whilePART ::= WHILE {: RESULT = Generator.newLabel(); :}
+;
+
+doPART ::= DO {: RESULT = Generator.newLabel(); :}
+;
+
+forPART ::= FOR {: RESULT = Generator.newLabel(); :}
+;
+
+
+elseCond ::= ELSE sentence
+    |
+;
+
+expression ::= expression:e1 PLUS expression:e2 {: RESULT = Generator.arithmetic(e1 + " + " + e2); :}
+    | expression:e1 MINUS expression:e2         {: RESULT = Generator.arithmetic(e1 + " - " + e2); :}
+    | expression:e1 MUL expression:e2           {: RESULT = Generator.arithmetic(e1 + " * " + e2); :}
+    | expression:e1 DIV expression:e2           {: RESULT = Generator.arithmetic(e1 + " / " + e2); :}
+    | MINUS expression:e                        {: RESULT = Generator.arithmetic("-" + e); :} %prec UMINUS
+    | OP expression:e CP                        {: RESULT = e; :}
+    | VAR:v ASIG expression:e                   {: RESULT = Generator.assignment(v, e); :}
+    | VAR:v                                     {: RESULT = v; :}
+    | NUMBER:n                                  {: RESULT = n; :}
+;
+
+condition ::= expression:e1 EQ expression:e2    {: RESULT = Generator.condition(Generator.EQ, e1, e2); :}
+    | expression:e1 NOTEQ expression:e2         {: RESULT = Generator.condition(Generator.NOTEQ, e1, e2); :}
+    | expression:e1 LT expression:e2            {: RESULT = Generator.condition(Generator.LT, e1, e2); :}
+    | expression:e1 LTOREQ expression:e2        {: RESULT = Generator.condition(Generator.LTOREQ, e1, e2); :}
+    | expression:e1 GT expression:e2            {: RESULT = Generator.condition(Generator.GT, e1, e2); :}
+    | expression:e1 GTOREQ expression:e2        {: RESULT = Generator.condition(Generator.GTOREQ, e1, e2); :}
+    | NOT condition:c1                          {: RESULT = Generator.operator(Generator.NOT, c1, null); :}
+    | condition:c1 AND {: Generator.label(c1.getV()); :} condition:c2 {: RESULT = Generator.operator(Generator.AND, c1, c2); :}
+    | condition:c1 OR  {: Generator.label(c1.getF()); :} condition:c2 {: RESULT = Generator.operator(Generator.OR, c1, c2); :}
+    | OP condition:c CP                         {: RESULT = c; :}
+;
